@@ -1,9 +1,9 @@
-import type { CSSProperties, FC } from 'react';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { customTwMerge } from '../../utils/customTwMerge';
+import type { CSSProperties, FC } from "react";
+import { memo, useEffect, useRef, useState } from "react";
+import { customTwMerge } from "../../utils/customTwMerge";
 
 interface Log {
-  type: 'log' | 'warn' | 'error';
+  type: "log" | "warn" | "error";
   timestamp: number;
   message: string;
 }
@@ -11,33 +11,38 @@ interface Log {
 const ConsoleOnScreen: FC = () => {
   const logContainerRef = useRef<HTMLDivElement>(null);
   const [logs, setLogs] = useState<Log[]>([]);
-  const shiftLog = useCallback(() => {
-    setLogs(prevLogs => {
-      prevLogs.shift();
-
-      return prevLogs;
-    });
-  }, []);
 
   useEffect(() => {
     const oriConsole = console;
-    const pushLog = (type: Log['type'], ...args: unknown[]) => {
+    const pushLog = (type: Log["type"], ...args: unknown[]) => {
       oriConsole.log(...args);
 
-      setLogs(prevLogs =>
+      setLogs((prevLogs) =>
         prevLogs.concat({
           type,
           timestamp: Date.now(),
-          message: args.map(val => typeof val === 'object' ? JSON.stringify(val) : val).join(', '),
+          message: args
+            .map((val) => {
+              if (typeof val === "object") {
+                try {
+                  return JSON.stringify(val);
+                } catch {
+                  // ignore error
+                }
+              }
+
+              return val;
+            })
+            .join(", "),
         })
       );
     };
 
     globalThis.console = {
       ...oriConsole,
-      log: pushLog.bind(null, 'log'),
-      warn: pushLog.bind(null, 'warn'),
-      error: pushLog.bind(null, 'error'),
+      log: pushLog.bind(null, "log"),
+      warn: pushLog.bind(null, "warn"),
+      error: pushLog.bind(null, "error"),
     };
 
     return () => {
@@ -53,29 +58,33 @@ const ConsoleOnScreen: FC = () => {
     }
 
     const intersectionObserver = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
+      (entries) => {
+        entries.forEach((entry) => {
           if (!entry.isIntersecting) {
-            shiftLog();
+            setLogs((prevLogs) => {
+              prevLogs.shift();
+
+              return prevLogs;
+            });
           }
         });
       },
       {
         root: document,
-        rootMargin: '0% 0% 0% 0%',
+        rootMargin: "0% 0% 0% 0%",
         threshold: [0],
       }
     );
 
-    const mutationObserver = new MutationObserver(mutations => {
+    const mutationObserver = new MutationObserver((mutations) => {
       mutations.forEach(({ addedNodes, removedNodes }) => {
-        removedNodes.forEach(node => {
+        removedNodes.forEach((node) => {
           if (node instanceof Element) {
             intersectionObserver.unobserve(node);
           }
         });
 
-        addedNodes.forEach(node => {
+        addedNodes.forEach((node) => {
           if (node instanceof Element) {
             intersectionObserver.observe(node);
           }
@@ -105,24 +114,24 @@ const ConsoleOnScreen: FC = () => {
 
 const Log = memo<Log>(({ type, timestamp, message }) => {
   const [text, style] = (() => {
-    const [, text = message, inlineStyle = ''] =
+    const [, text = message, inlineStyle = ""] =
       message.match(/^%c\s+(.+?),\s*(.+)$/) ?? [];
 
     const style: CSSProperties = inlineStyle
-      ? inlineStyle.split(';').reduce<CSSProperties>(
-        (obj, line) => {
-          const [key, val = ''] = line.split(':');
+      ? inlineStyle.split(";").reduce<CSSProperties>(
+          (obj, line) => {
+            const [key, val = ""] = line.split(":");
 
-          Object.defineProperty(obj, key.trim(), { value: val.trim() });
+            Object.defineProperty(obj, key.trim(), { value: val.trim() });
 
-          return obj;
-        },
-        {
-          whiteSpace: 'nowrap',
-          flexGrow: 0,
-          opacity: 0.5,
-        } satisfies CSSProperties
-      )
+            return obj;
+          },
+          {
+            whiteSpace: "nowrap",
+            flexGrow: 0,
+            opacity: 0.5,
+          } satisfies CSSProperties
+        )
       : {};
 
     return [text, style];
@@ -132,16 +141,16 @@ const Log = memo<Log>(({ type, timestamp, message }) => {
     <div
       key={timestamp}
       className={customTwMerge(
-        'flex gap-4 border-b px-1 py-1 text-sm text-start last:border-none',
+        "flex gap-4 border-b px-1 py-1 text-sm text-start last:border-none",
         {
-          'border-gray-400 bg-gray-400/25 text-gray-600': type === 'log',
-          'border-yellow-400 bg-yellow-400/25 text-yellow-600': type === 'warn',
-          'border-red-400 bg-red-400/25 text-red-600': type === 'error',
+          "border-gray-400 bg-gray-400/25 text-gray-400": type === "log",
+          "border-yellow-400 bg-yellow-400/25 text-yellow-400": type === "warn",
+          "border-red-400 bg-red-400/25 text-red-400": type === "error",
         }
       )}
     >
       <div className="shrink-0 font-[monospace]">
-        {new Date(timestamp).toISOString().replace(/.+T(.+)Z/, '$1')}
+        {new Date(timestamp).toISOString().replace(/.+T(.+)Z/, "$1")}
       </div>
       <div className="flex-1" style={style}>
         {text}
@@ -150,9 +159,11 @@ const Log = memo<Log>(({ type, timestamp, message }) => {
   );
 });
 
-Log.displayName = 'LogMemo';
+Log.displayName = "LogMemo";
 
-const ConsoleOnScreenWrapper: FC<{ enabled?: boolean }> = ({ enabled = true }) => {
+const ConsoleOnScreenWrapper: FC<{ enabled?: boolean }> = ({
+  enabled = true,
+}) => {
   return enabled ? <ConsoleOnScreen /> : null;
 };
 

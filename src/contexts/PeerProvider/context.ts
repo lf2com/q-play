@@ -1,8 +1,8 @@
+import type Peer from "peerjs";
 import { createContext, useContext } from "react";
-import type CustomPeer from "./CustomPeer";
 
 export interface PeerContextValue {
-  peer: CustomPeer | null;
+  peer: Peer | null;
   code: string;
   getIdByCode: (code: string) => string;
   getCodeById: (id: string) => string;

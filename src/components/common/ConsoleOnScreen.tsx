@@ -103,7 +103,7 @@ const ConsoleOnScreen: FC = () => {
   return (
     <div
       ref={logContainerRef}
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-top overflow-hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[10] overflow-hidden"
     >
       {logs.map((props, index) => (
         <Log key={`${index}_${props.timestamp}`} {...props} />
@@ -119,19 +119,19 @@ const Log = memo<Log>(({ type, timestamp, message }) => {
 
     const style: CSSProperties = inlineStyle
       ? inlineStyle.split(";").reduce<CSSProperties>(
-          (obj, line) => {
-            const [key, val = ""] = line.split(":");
+        (obj, line) => {
+          const [key, val = ""] = line.split(":");
 
-            Object.defineProperty(obj, key.trim(), { value: val.trim() });
+          Object.defineProperty(obj, key.trim(), { value: val.trim() });
 
-            return obj;
-          },
-          {
-            whiteSpace: "nowrap",
-            flexGrow: 0,
-            opacity: 0.5,
-          } satisfies CSSProperties
-        )
+          return obj;
+        },
+        {
+          whiteSpace: "nowrap",
+          flexGrow: 0,
+          opacity: 0.5,
+        } satisfies CSSProperties
+      )
       : {};
 
     return [text, style];

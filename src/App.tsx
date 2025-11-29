@@ -13,7 +13,7 @@ import ConsoleOnScreen from "./components/common/ConsoleOnScreen";
 
 const App: FC = () => (
   <PeerProvider>
-    <ConsoleOnScreen />
+    <ConsoleOnScreen enabled={import.meta.env.DEV} />
     <Routes>
       <Route path="/">
         <Route index element={<Entry />} />

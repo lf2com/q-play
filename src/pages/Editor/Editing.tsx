@@ -127,9 +127,9 @@ const Editing: FC = () => {
                         .concat(
                           file
                             ? {
-                                file,
-                                url: URL.createObjectURL(file),
-                              }
+                              file,
+                              url: URL.createObjectURL(file),
+                            }
                             : null
                         )
                         .concat(prev.slice(index + 1));
@@ -161,14 +161,45 @@ const Editing: FC = () => {
                 return;
               }
 
-              const { file } = content;
+              const { file, url } = content;
+
+              const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+                const img = new Image();
+
+                img.addEventListener('load', () => {
+                  resolve(img);
+                });
+                img.addEventListener('error', reject);
+                img.src = url;
+              })
+
+              const { naturalWidth, naturalHeight } = img;
+              const srcCanvas = document.createElement('canvas');
+              const scale = Math.min(1920 / naturalWidth, 1080 / naturalHeight);
+
+              srcCanvas.width = Math.round(scale * naturalWidth);
+              srcCanvas.height = Math.round(scale * naturalHeight);
+
+              const ctx = srcCanvas.getContext('2d');
+
+              ctx?.drawImage(img, 0, 0, srcCanvas.width, srcCanvas.height);
+
+              const resizedBlob = await new Promise<Blob>((resolve, reject) => {
+                srcCanvas.toBlob(blob => {
+                  if (blob) {
+                    resolve(blob)
+                  } else {
+                    reject(Error('Failed to resize image'))
+                  }
+                }, file.type, 1)
+              });
 
               await conn.send({
                 type: "update-content",
                 regionIndex: index,
                 filename: file.name,
-                filetype: file.type,
-                file,
+                filetype: resizedBlob.type,
+                file: resizedBlob,
               });
             }, Promise.resolve());
 

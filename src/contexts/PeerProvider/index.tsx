@@ -5,8 +5,8 @@ import {
   type FC,
   type PropsWithChildren,
 } from "react";
-import CustomPeer from "./CustomPeer";
 import { PeerContext, type PeerContextValue } from "./context";
+import Peer from "peerjs";
 
 const ID_PREFIX = "q-play-";
 
@@ -14,13 +14,13 @@ const getIdByCode = (code: string) => `${ID_PREFIX}${code}`;
 const getCodeById = (id: string) => id.replace(ID_PREFIX, "");
 
 const PeerProvider: FC<PropsWithChildren> = ({ children }) => {
-  const [code] = useState(
-    Array.from({ length: 6 }, () => (10 * Math.random()) | 0).join("")
+  const [code] = useState(() =>
+    ((Math.random() * 1000000) | 0).toString().padStart(6, "0")
   );
-  const [peer, setPeer] = useState<CustomPeer | null>(null);
+  const [peer, setPeer] = useState<Peer | null>(null);
 
   useEffect(() => {
-    const newPeer = new CustomPeer(getIdByCode(code), {
+    const newPeer = new Peer(getIdByCode(code), {
       debug: 3,
       config: {
         iceServers: [
@@ -54,6 +54,7 @@ const PeerProvider: FC<PropsWithChildren> = ({ children }) => {
       });
 
     return () => {
+      newPeer.removeAllListeners();
       newPeer.disconnect();
       newPeer.destroy();
     };
